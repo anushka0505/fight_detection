@@ -327,7 +327,7 @@ def FightInference_Time(video_path,model,SEQUENCE_LENGTH=64):
 
 
 
-def predict_on_video(video_file_path, output_file_path, model, SEQUENCE_LENGTH,skip=2,showInfo=False):
+def predict_on_video(video_file_path, output_folder_path, model, SEQUENCE_LENGTH,skip=2,showInfo=False):
     '''
     This function will perform action recognition on a video using the LRCN model.
     Args:
@@ -339,15 +339,22 @@ def predict_on_video(video_file_path, output_file_path, model, SEQUENCE_LENGTH,s
     # Initialize the VideoCapture object to read from the video file.
     video_reader = cv2.VideoCapture(video_file_path)
 
-    # Get the width and height of the video.
+    # Get the width, height and fps of the video.
     original_video_width = int(video_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
     original_video_height = int(video_reader.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = video_reader.get(cv2.CAP_PROP_FPS)
     print(f"Video FPS: {fps}")
 
+    # check if the output folder exits or not
+    # if it does'nt, then make the folder
+    alert_folder_check(output_folder_path)
+
+    # output video path inside the output folder
+    output_video_path = f"{output_folder_path}/Output_video.mp4"
+
     # Initialize the VideoWriter Object to store the output video in the disk.
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video_writer = cv2.VideoWriter(output_file_path, fourcc, 
+    video_writer = cv2.VideoWriter(output_video_path, fourcc, 
                                    video_reader.get(cv2.CAP_PROP_FPS), (original_video_width, original_video_height))
 
     # Declare a queue to store video frames.
@@ -375,30 +382,39 @@ def predict_on_video(video_file_path, output_file_path, model, SEQUENCE_LENGTH,s
           # Appending the pre-processed frame into the frames list.
           frames_queue.append(framee)
          
-        # changing the predicted class name to blank before the prediction 
+        # changing the predicted class name to blank before the prediction
+        # this will make sure to only print the label on the first frame of the bunch
         # predicted_class_name = ''
+
         # Check if the number of frames in the queue are equal to the fixed sequence length.
         if len(frames_queue) == SEQUENCE_LENGTH:
             predicted_class_name= PredTopKClass(1,frames_queue, model)
             if showInfo:
                 print(predicted_class_name)
+
+            # checking if the bunch has "fight" as the predicted class 
             if predicted_class_name=="fight":
+
+                # print the label on the last frame
                 cv2.putText(frame, predicted_class_name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-                save_alert_image_csv(frame, s_no)
-            # save_alert_image_csv(frame, s_no, 0)
-            # save_alert_image(frame)
+
+                # save the last frame where "fight" label is detected
+                # and also add the timestamp and other info in the cvs file
+                save_alert_image_csv(frame, s_no, output_folder_path)
+            
+            # reset the queue
             frames_queue = deque(maxlen = SEQUENCE_LENGTH)
     
         # Write predicted class name on top of the frame.
         if predicted_class_name=="fight":
-          cv2.putText(frame, predicted_class_name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-        #   save_alert_image_csv(frame, s_no)
+            cv2.putText(frame, predicted_class_name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+
+        # uncomment the below line if we want to print "no fight" label on the frames
         # else:
-        #   cv2.putText(frame, predicted_class_name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        #     cv2.putText(frame, predicted_class_name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         counter+=1
         
         # Write The frame into the disk using the VideoWriter Object.
-
         video_writer.write(frame)
         # time.sleep(2)
     if showInfo:
@@ -407,27 +423,48 @@ def predict_on_video(video_file_path, output_file_path, model, SEQUENCE_LENGTH,s
     video_reader.release()
     video_writer.release()
 
-def save_alert_image_csv(frame, s_no):
-
-    # get the current time 
-    now = datetime.now()
-    timestamp = now.strftime("%Y-%B-%d_%H-%M-%S.%f")
-    
-    # path to alert folder
-    path_ = "./alert_images"
+def alert_folder_check(path_):
+    '''
+    This function will perform a check if the folder path mentioned exists or not and if it does not the make the
+    folder.
+    Args:
+    path_:  The path of the folder stored in the disk on where the output is supposed to be saved.
+    '''
 
     # Check if the folder exists, and if not, create it
     if not os.path.exists(path_):
         os.makedirs(path_)
         print(f"Folder '{path_}' created.")
     else:
-        # print(f"Folder '{path_}' already exists.")
-        pass
+        print(f"Folder '{path_}' already exists.")
+        # pass
 
-    file_path = f"{path_}/{timestamp}.jpg"
+def save_alert_image_csv(frame, s_no, path_):
+    '''
+    This function will save the alert images in a folder and save the alert info in a csv file in the alert folder.
+    Args:
+    frame: The alert frame which on which alert is raised.
+    s_no: The counter to serialise the alerts in the csv file.
+    path_:  The path of the folder stored in the disk on where the output is supposed to be saved.
+    '''
 
-    # Save the alert image name, time stamp and detection in a csv file
-    csv_file_path = "./alert_images/Report.csv"
+    # get the current time 
+    now = datetime.now()
+    timestamp = now.strftime("%Y-%B-%d_%H-%M-%S.%f")
+    
+    # Alert Image
+    # image path
+    image_path = f"{path_}/{timestamp}.jpg"
+
+    # Save the image
+    cv2.imwrite(image_path, frame)
+
+    # CSV File
+    # csv file path
+    csv_file_path = f"{path_}/Report.csv"
+
+    # column details to save
+    # serial no, alert image name, time stamp and detection in a csv file
     columns = ["S_No", "Image_Name", "Time_stamp", "Feature"]
 
     try:
@@ -440,7 +477,10 @@ def save_alert_image_csv(frame, s_no):
         # If the file is not found, create a new DataFrame with the specified columns
         df = pd.DataFrame(columns=columns)
 
+    # save the details in the csv column
     new_data = {"S_No": s_no, "Image_Name": timestamp, "Time_stamp": timestamp, "Feature": "Fight"}
+
+    # increase the serial number counter
     s_no+=1
 
     # Convert new_data to a DataFrame
@@ -451,10 +491,6 @@ def save_alert_image_csv(frame, s_no):
 
     # Save the updated DataFrame back to the CSV file
     df.to_csv(csv_file_path, index=False)
-    # if i == 1:
-
-    # Save the image
-    cv2.imwrite(file_path, frame)
 
 def showIference(model, sequence,skip,input_video_file_path,output_video_file_path,showInfo):
     # Perform Accident Detection on the Test Video.
