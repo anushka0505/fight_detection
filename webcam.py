@@ -1,5 +1,5 @@
 import cv2
-
+# abhay code
 # Open the default camera (usually the webcam)
 cap = cv2.VideoCapture(0)
 
