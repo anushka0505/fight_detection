@@ -18,7 +18,7 @@ import torchvision
 import numpy as np
 import pandas as pd
 import torch.nn as nn
-from moviepy.editor import *
+# from moviepy.editor import *
 import albumentations as A
 from collections import deque
 #from google.colab.patches import cv2_imshow
