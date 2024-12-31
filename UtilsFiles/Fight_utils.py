@@ -92,7 +92,7 @@ def PredTopKProb(k,clips,model):
   ProbTop_k = [round(elem, 5) for elem in ProbTop_k]
   return list(zip(Classes_nameTop_k,ProbTop_k))
 
-def predict_on_video(video_file_path, output_folder_path, model, SEQUENCE_LENGTH,skip=2,showInfo=False):
+def predict_on_video(video_file_path, model, SEQUENCE_LENGTH=10,skip=2,showInfo=True):
     '''
     This function will perform action recognition on a video using the LRCN model.
     Args:
@@ -103,6 +103,7 @@ def predict_on_video(video_file_path, output_folder_path, model, SEQUENCE_LENGTH
 
     # Initialize the VideoCapture object to read from the video file.
     video_reader = cv2.VideoCapture(video_file_path)
+    output_folder_path = "Output_video_folder/"
 
     # Get the width, height and fps of the video.
     original_video_width = int(video_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
