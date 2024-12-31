@@ -29,6 +29,7 @@ CLASSES_LIST = ['fight','noFight']
 SEQUENCE_LENGTH = 16
 predicted_class_name = ""
 
+##used
 # Define the transforms
 def transform_():
     transform = A.Compose(
@@ -37,7 +38,7 @@ def transform_():
      )
     return transform
 
-
+"""
 def frames_extraction(video_path,SEQUENCE_LENGTH):
     '''
     This function will extract the required frames from a video after resizing and normalizing them.
@@ -220,8 +221,8 @@ def train_model(device,model, dataloaders, criterion, optimizer, num_epochs=25, 
 
     # load best model weights
     model.load_state_dict(best_model_wts)
-    return model, val_acc_history
-
+    return model, val_acc_history"""
+##used
 def loadModel(modelPath):
   PATH=modelPath
   model_ft = torchvision.models.video.mc3_18(pretrained=True, progress=False)
@@ -231,7 +232,7 @@ def loadModel(modelPath):
   model_ft.to(device)
   model_ft.eval()
   return model_ft
-
+##used
 def PredTopKClass(k, clips, model):
   with torch.no_grad(): # we do not want to backprop any gradients
 
@@ -261,7 +262,7 @@ def PredTopKClass(k, clips, model):
   ProbTop_k = [round(elem, 5) for elem in ProbTop_k]
   return Classes_nameTop_k[0]    #list(zip(Classes_nameTop_k,ProbTop_k))
 
-
+##used in st
 def PredTopKProb(k,clips,model):
   with torch.no_grad(): # we do not want to backprop any gradients
 
@@ -290,7 +291,7 @@ def PredTopKProb(k,clips,model):
   ProbTop_k=prob[0].tolist()
   ProbTop_k = [round(elem, 5) for elem in ProbTop_k]
   return list(zip(Classes_nameTop_k,ProbTop_k))
-
+"""
 def downloadYouTube(videourl, path):
 
     yt = YouTube(videourl)
@@ -298,35 +299,35 @@ def downloadYouTube(videourl, path):
     if not os.path.exists(path):
         os.makedirs(path)
     yt.download(path)
+"""
+# def show_video(file_name, width=640):
+#   # show resulting deepsort video
+#   mp4 = open(file_name,'rb').read()
+#   data_url = "data:video/mp4;base64," + b64encode(mp4).decode()
+#   return HTML("""
+#   <video width="{0}" controls>
+#         <source src="{1}" type="video/mp4">
+#   </video>
+#   """.format(width, data_url))
 
-def show_video(file_name, width=640):
-  # show resulting deepsort video
-  mp4 = open(file_name,'rb').read()
-  data_url = "data:video/mp4;base64," + b64encode(mp4).decode()
-  return HTML("""
-  <video width="{0}" controls>
-        <source src="{1}" type="video/mp4">
-  </video>
-  """.format(width, data_url))
-
-def FightInference(video_path,model,SEQUENCE_LENGTH=64):
-  clips = frames_extraction(video_path,SEQUENCE_LENGTH)
-  print(PredTopKClass(1,clips, model))
-  print(PredTopKProb(2,clips, model))
-  return "***********"
-
-
-def FightInference_Time(video_path,model,SEQUENCE_LENGTH=64):
-  start_time = time.time()
-  clips = frames_extraction(video_path,SEQUENCE_LENGTH)
-  class_=PredTopKClass(1,clips,model)
-  elapsed = time.time() - start_time
-  print("time is:",elapsed)
-  return class_
+# def FightInference(video_path,model,SEQUENCE_LENGTH=64):
+#   clips = frames_extraction(video_path,SEQUENCE_LENGTH)
+#   print(PredTopKClass(1,clips, model))
+#   print(PredTopKProb(2,clips, model))
+#   return "***********"
 
 
+# def FightInference_Time(video_path,model,SEQUENCE_LENGTH=64):
+#   start_time = time.time()
+#   clips = frames_extraction(video_path,SEQUENCE_LENGTH)
+#   class_=PredTopKClass(1,clips,model)
+#   elapsed = time.time() - start_time
+#   print("time is:",elapsed)
+#   return class_
 
 
+
+###used
 def predict_on_video(video_file_path, output_folder_path, model, SEQUENCE_LENGTH,skip=2,showInfo=False):
     '''
     This function will perform action recognition on a video using the LRCN model.
@@ -422,7 +423,7 @@ def predict_on_video(video_file_path, output_folder_path, model, SEQUENCE_LENGTH
     # Release the VideoCapture and VideoWriter objects.
     video_reader.release()
     video_writer.release()
-
+##used
 def alert_folder_check(path_):
     '''
     This function will perform a check if the folder path mentioned exists or not and if it does not the make the
@@ -439,6 +440,34 @@ def alert_folder_check(path_):
         print(f"Folder '{path_}' already exists.")
         # pass
 
+def add_red_border(frame, border_thickness=10):
+    """
+    Adds a red border around the given frame.
+
+    Args:
+    - frame (numpy.ndarray): The input image (frame).
+    - border_thickness (int): The thickness of the border. Default is 10 pixels.
+
+    Returns:
+    - frame_with_border (numpy.ndarray): The image with a red border.
+    """
+    # Define the border color (Red in BGR format)
+    border_color = (0, 0, 255)  # Red color in BGR format
+
+    # Add a border to the image
+    frame_with_border = cv2.copyMakeBorder(
+        frame, 
+        top=border_thickness, 
+        bottom=border_thickness, 
+        left=border_thickness, 
+        right=border_thickness, 
+        borderType=cv2.BORDER_CONSTANT, 
+        value=border_color
+    )
+
+    return frame_with_border
+
+##used
 def save_alert_image_csv(frame, s_no, path_):
     '''
     This function will save the alert images in a folder and save the alert info in a csv file in the alert folder.
@@ -491,7 +520,7 @@ def save_alert_image_csv(frame, s_no, path_):
 
     # Save the updated DataFrame back to the CSV file
     df.to_csv(csv_file_path, index=False)
-
+"""
 def showIference(model, sequence,skip,input_video_file_path,output_video_file_path,showInfo):
     # Perform Accident Detection on the Test Video.
     predict_on_video(input_video_file_path, output_video_file_path, model,sequence,skip,showInfo)
@@ -502,7 +531,8 @@ def Fight_PipeLine(modelPath,inputPath,seq,skip,outputPath,showInfo=False):
     # Perform Accident Detection on the Test Video.
     predict_on_video(inputPath, outputPath, model,seq,skip,showInfo)
     return outputPath
-
+"""
+##used in st
 def streaming_framesInference(frames, model):
     clips = []
     transform = transform_()
@@ -517,31 +547,44 @@ def streaming_framesInference(frames, model):
     print(first)
     print(PredTopKProb(2, clips, model))
     return first
-
-
+##used in st
 def streaming_predict(frames, model):
     prediction = streaming_framesInference(frames, model)
     global predicted_class_name
     predicted_class_name = prediction
 
-
+##used in st
 def start_streaming(model,streamingPath):
     video = cv2.VideoCapture(streamingPath)
     l = []
-    last_time = time.time() - 3
+    skip = 2
+    count = 0
+    s_no = 1
+    output_folder_path = "output_video_folder/"
+    # check if the output folder exits or not
+    # if it does'nt, then make the folder
+    alert_folder_check(output_folder_path)
+    last_time = time.time()
     while True:
         _, frame = video.read()
-        if last_time+2.5 < time.time():
+        if count % skip == 0:
             l.append(frame)
-        if len(l) == 16:
-            last_time = time.time()
+        if len(l) == 10:
             x = threading.Thread(target=streaming_predict, args=(l,model))
             x.start()
             l = []
+        print(predicted_class_name)
         if predicted_class_name == "fight":
+            frame = add_red_border(frame)
             cv2.putText(frame, predicted_class_name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-        else:
-            cv2.putText(frame, predicted_class_name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            if time.time() - last_time > 0.9:
+                last_time = time.time()
+                # save the last frame where "fight" label is detected
+                # and also add the timestamp and other info in the cvs file
+                save_alert_image_csv(frame, s_no, output_folder_path)
+        # else:
+        #     cv2.putText(frame, predicted_class_name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        count+=1
         cv2.imshow("RTSP", frame)
         k = cv2.waitKey(1)
         if k == ord('q'):

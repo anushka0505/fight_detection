@@ -1,8 +1,7 @@
 # import required packages
 import torch
-from UtilsFiles.Fight_utils import loadModel, predict_on_video,start_streaming
+from UtilsFiles.Fight_utils import loadModel, predict_on_video, start_streaming
 import argparse
-import time
 
 
 torch.backends.cudnn.benchmark = True
@@ -31,11 +30,7 @@ def main():
         start_streaming(model,args.inputPath)
         
     else:
-        start=time.time()
         predict_on_video(args.inputPath, args.outputPath, model, args.sequenceLength, args.skip, args.showInfo)
-        end = time.time()
-        print(f"Time taken: {end-start}")
-
 
 if __name__ == '__main__':
     main()
