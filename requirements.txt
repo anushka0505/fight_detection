@@ -9,3 +9,5 @@ pytube>=11.0.2
 pytube3>=9.6.4
 torch>=1.10.1
 torchvision>=0.11.2
+streamlit
+Pillow

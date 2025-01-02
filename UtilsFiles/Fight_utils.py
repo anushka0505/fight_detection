@@ -16,7 +16,6 @@ CLASSES_LIST = ['fight','noFight']
 SEQUENCE_LENGTH = 16
 predicted_class_name = ""
 
-# Define the transforms
 def transform_():
     transform = A.Compose(
     [A.Resize(128, 171, always_apply=True),A.CenterCrop(112, 112, always_apply=True),
@@ -163,7 +162,7 @@ def predict_on_video(video_file_path, model, SEQUENCE_LENGTH=10,skip=2,showInfo=
 
                 # print the label on the last frame
                 cv2.putText(frame, predicted_class_name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-
+                frame = add_red_border(frame)
                 # save the last frame where "fight" label is detected
                 # and also add the timestamp and other info in the cvs file
                 save_alert_image_csv(frame, s_no, output_folder_path)
