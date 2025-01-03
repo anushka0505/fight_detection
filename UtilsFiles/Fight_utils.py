@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import albumentations as A
 from collections import deque
+import streamlit as st
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 DATASET_DIR = '/content/Fight_Detection_From_Surveillance_Cameras-PyTorch_Project/dataset'
@@ -115,7 +116,7 @@ def predict_on_video(video_file_path, model, SEQUENCE_LENGTH=10,skip=2,showInfo=
     alert_folder_check(output_folder_path)
 
     # output video path inside the output folder
-    output_video_path = f"{output_folder_path}/Output_video.mp4"
+    output_video_path = "Output_video_folder/Output_video.mp4"
 
     # Initialize the VideoWriter Object to store the output video in the disk.
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -304,19 +305,27 @@ def streaming_predict(frames, model):
     global predicted_class_name
     predicted_class_name = prediction
 
-def start_streaming(model,streamingPath):
+def start_streaming(model,streamingPath,stop_streaming_flag):
     video = cv2.VideoCapture(streamingPath)
+    if not video.isOpened():
+        print("Error: Could not open video stream.")
+        return
+    # Add a placeholder in Streamlit for real-time frames
+    frame_placeholder = st.empty()
     l = []
     skip = 2
     count = 0
     s_no = 1
-    output_folder_path = "output_video_folder/"
+    output_folder_path = "Output_video_folder/"
     # check if the output folder exits or not
     # if it does'nt, then make the folder
     alert_folder_check(output_folder_path)
     last_time = time.time()
-    while True:
-        _, frame = video.read()
+    while not stop_streaming_flag.is_set():
+        ret, frame = video.read()
+        if not ret:
+            print("Failed to read frame. Exiting...")
+            break
         if count % skip == 0:
             l.append(frame)
         if len(l) == 10:
@@ -334,11 +343,17 @@ def start_streaming(model,streamingPath):
                 save_alert_image_csv(frame, s_no, output_folder_path)
         # else:
         #     cv2.putText(frame, predicted_class_name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        # Convert BGR to RGB for Streamlit
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        # Update frame in Streamlit
+        frame_placeholder.image(frame_rgb, channels="RGB", use_container_width=True)
+
         count+=1
-        cv2.imshow("RTSP", frame)
-        k = cv2.waitKey(1)
-        if k == ord('q'):
-            break
+        # cv2.imshow("RTSP", frame)
+        # k = cv2.waitKey(1)
+        # if k == ord('q'):
+        #     break
 
     video.release()
     cv2.destroyAllWindows()

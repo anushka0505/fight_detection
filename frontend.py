@@ -1,12 +1,21 @@
 import streamlit as st
 from PIL import Image
 import cv2
+import threading
 import shutil
 import os
 import numpy as np
 from UtilsFiles.Fight_utils import loadModel, predict_on_video, start_streaming
 from emailfinal import send_email_all_files
 
+# Initialize session state variables
+if "stop_flag" not in st.session_state:
+    st.session_state.stop_flag = threading.Event()
+if "thread" not in st.session_state:
+    st.session_state.thread = None
+
+
+# stop_streaming_flag = threading.Event()
 model = loadModel("/Users/anushkatyagi/Desktop/git_folder/fight_detection/Models/model_16_m3_0.8888.pth")
 # --- Streamlit UI ---
 st.set_page_config(page_title="Fight Detection Dashboard", layout="wide")
@@ -41,6 +50,11 @@ if input_method == "Saved Video":
         video_path = "uploaded_video.mp4"
         # cap = cv2.VideoCapture(video_path)
         predict_on_video(video_path, model)
+        if os.path.exists("Output_video_folder2/") and os.path.isdir("Output_video_folder2/"):
+            shutil.rmtree("Output_video_folder2/")
+            os.makedirs("Output_video_folder2/")
+        shutil.copy2("Output_video_folder/Output_video.mp4", "Output_video_folder2/Output_video.mp4")
+        st.video("Output_video_folder2/Output_video.mp4")
         # Add backend logic here to process the uploaded video
         if user_email:
             st.success(f"Alerts will be sent to {user_email} upon fight detection.")
@@ -57,20 +71,45 @@ elif input_method == "RTSP Server":
     if rtsp_url:
         st.write(f"Streaming from RTSP server: {rtsp_url}")
         st.write("(Backend processing logic to be added)")
+        start_streaming(model,rtsp_url)
         # Placeholder for backend integration
         if user_email:
             st.success(f"Alerts will be sent to {user_email} upon fight detection.")
-            # Call send_email_alert() when a fight is detected (use the real folder path)
+            send_email_all_files(user_email, "Output_video_folder/")
+            st.success(f"Alerts sent to {user_email}")
+            # if os.path.exists(video_path):
+            #     os.remove(video_path)
+            if os.path.exists("Output_video_folder/") and os.path.isdir("Output_video_folder/"):
+                shutil.rmtree("Output_video_folder/")
+                # Call send_email_alert() when a fight is detected (use the real folder path)
 
 # Webcam Input Option
 elif input_method == "Webcam":
-    st.write("Initializing webcam...")
+    # st.write("Initializing webcam...")
     if st.button("Start Webcam"):
         st.write("Accessing webcam feed...")
-        # Add backend logic to process webcam feed here
+        if st.session_state.thread is None or not st.session_state.thread.is_alive():
+            st.session_state.stop_flag.clear()
+            # Run start_streaming in a separate thread
+            st.session_state.thread = threading.Thread(target=start_streaming, args=(model, 0, st.session_state.stop_flag))
+            # rtsp_thread.daemon = True  # Ensures it closes with the app
+            st.session_state.thread.start()
+            st.success("RTSP streaming started. Observing for Fight Detection!")
+
+    # Stop RTSP streaming
+    if st.button("Stop RTSP Streaming"):
+        # st.success(f"Bedore code is stoped {st.session_state.stop_flag}")
+        st.session_state.stop_flag.set()
+        if st.session_state.thread is not None:
+            st.session_state.thread.join()  # Wait for the thread to exit
+            st.session_state.thread = None  # Reset thread state
+        # st.success(f"Code stoped bcos of {st.session_state.stop_flag}")
         if user_email:
-            st.success(f"Alerts will be sent to {user_email} upon fight detection.")
-            # Call send_email_alert() when a fight is detected (use the real folder path)
+            st.success(f"Processing frames, alerts will be sent to {user_email}")
+            send_email_all_files(user_email, "Output_video_folder/")
+            st.success(f"Alerts sent to {user_email}")
+            if os.path.exists("Output_video_folder/") and os.path.isdir("Output_video_folder/"):
+                shutil.rmtree("Output_video_folder/")
 
 
 # # Results Section
