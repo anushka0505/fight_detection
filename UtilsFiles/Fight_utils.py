@@ -305,7 +305,7 @@ def streaming_predict(frames, model):
     global predicted_class_name
     predicted_class_name = prediction
 
-def start_streaming(model,streamingPath,stop_streaming_flag):
+def start_streaming(model,streamingPath,stop_streaming_flag, frame_queue):
     video = cv2.VideoCapture(streamingPath)
     if not video.isOpened():
         print("Error: Could not open video stream.")
@@ -341,19 +341,15 @@ def start_streaming(model,streamingPath,stop_streaming_flag):
                 # save the last frame where "fight" label is detected
                 # and also add the timestamp and other info in the cvs file
                 save_alert_image_csv(frame, s_no, output_folder_path)
-        # else:
-        #     cv2.putText(frame, predicted_class_name, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        # Convert BGR to RGB for Streamlit
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        
+        if frame_queue.qsize() < 1:
+            frame_queue.put(frame)
+        # frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        # Update frame in Streamlit
-        frame_placeholder.image(frame_rgb, channels="RGB", use_container_width=True)
+        # # Update frame in Streamlit
+        # frame_placeholder.image(frame_rgb, channels="RGB", use_container_width=True)
 
         count+=1
-        # cv2.imshow("RTSP", frame)
-        # k = cv2.waitKey(1)
-        # if k == ord('q'):
-        #     break
 
     video.release()
     cv2.destroyAllWindows()
